@@ -235,14 +235,20 @@ The server will ask you to authenticate when it first starts. You need to access
    ```
 
 3. Open that URL in your browser, log in, and enter the code.
+4. **IMPORTANT: Save your login**
+   To avoid logging in every time the server restarts, run this command in the console:
+   ```
+   /auth persistence Encrypted
+   ```
+   (It will save credentials to your config folder).
 
-4. **CRITICAL: Detach Safely**
+5. **CRITICAL: Detach Safely**
    To leave the console **WITHOUT** stopping the server, you must press:
    **Ctrl + P**, then **Ctrl + Q**
    
    (Do **NOT** press `Ctrl + C` or the server will stop!)
 
-5. Verify server has started:
+6. Verify server has started:
    You should see "Hytale Server Booted!" in the logs.
 
 ### Step 6.5: Verify Everything is Working
