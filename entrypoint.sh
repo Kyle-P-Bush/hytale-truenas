@@ -122,22 +122,22 @@ check_server_files() {
     # Server not found - try to download
     echo "[INFO] Server files not found. Attempting automatic download..."
     
-    # First, try to get the downloader CLI
-    download_hytale_cli
-    
-    # Then try to download server files
-    if download_server_files; then
-        # Re-check for server JAR
-        for jar in "$HYTALE_DIR/HytaleServer.jar" "$HYTALE_DIR/hytale-server.jar"; do
-            if [ -f "$jar" ]; then
-                SERVER_JAR="$jar"
-                echo "[INFO] Found server JAR: $SERVER_JAR"
-                return 0
-            fi
-        done
+    # First, try to get the downloader CLI (don't exit on failure)
+    if download_hytale_cli; then
+        # Then try to download server files
+        if download_server_files; then
+            # Re-check for server JAR
+            for jar in "$HYTALE_DIR/HytaleServer.jar" "$HYTALE_DIR/hytale-server.jar"; do
+                if [ -f "$jar" ]; then
+                    SERVER_JAR="$jar"
+                    echo "[INFO] Found server JAR: $SERVER_JAR"
+                    return 0
+                fi
+            done
+        fi
     fi
     
-    # Still no server files - show manual instructions
+    # Still no server files - show manual instructions and WAIT (don't exit!)
     echo ""
     echo "=========================================="
     echo "  MANUAL SETUP REQUIRED"
@@ -162,7 +162,7 @@ check_server_files() {
     echo ""
     echo "=========================================="
     echo ""
-    echo "[INFO] Waiting for server files..."
+    echo "[INFO] Waiting for server files... (checking every 60 seconds)"
     
     # Wait without exiting - check periodically for files
     while true; do
@@ -174,6 +174,7 @@ check_server_files() {
                 return 0
             fi
         done
+        echo "[INFO] Still waiting for server files..."
     done
 }
 
