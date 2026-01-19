@@ -71,25 +71,30 @@ You'll see your pool name (common names: `tank`, `pool`, `storage`, `data`).
 
 ---
 
-## Part 3: Get the Project Files (1 minute)
+## Part 3: Get the Project Files (2 minutes)
 
 SSH into TrueNAS or use **System → Shell** in the web UI.
 
-**Option A: Clone into your hytale dataset** (if you already created it)
-```bash
-# Replace YOUR_POOL with your actual pool name (e.g., storage, tank, pool)
-cd /mnt/YOUR_POOL/hytale
-git clone https://github.com/Kyle-P-Bush/hytale-truenas.git .
-```
+> **Important:** You'll need `sudo` for write permissions. The project files should go in a **separate directory** from your data datasets.
 
-**Option B: Clone to a separate location**
 ```bash
+# Replace YOUR_POOL with your actual pool name (e.g., storage, tank)
 cd /mnt/YOUR_POOL
-git clone https://github.com/Kyle-P-Bush/hytale-truenas.git hytale-server
+sudo git clone https://github.com/Kyle-P-Bush/hytale-truenas.git hytale-server
 cd hytale-server
 ```
 
-> **Note:** The project files (Dockerfile, etc.) and data storage (worlds, config) can be in different locations. Just update the paths in `.env` accordingly.
+**Your directory structure will be:**
+```
+/mnt/YOUR_POOL/
+├── hytale/              ← Data storage (your datasets)
+│   ├── worlds/
+│   ├── config/
+│   └── backups/
+└── hytale-server/       ← Project files (Dockerfile, docker-compose, etc.)
+```
+
+This separation keeps your world saves and configs safe even if you update the project files.
 
 ---
 
@@ -97,14 +102,14 @@ cd hytale-server
 
 ### Step 4.1: Create Environment File
 1. SSH into TrueNAS or use the web Shell
-2. Navigate to where you cloned the project:
+2. Navigate to the project directory:
    ```bash
-   cd /mnt/YOUR_POOL/hytale   # or wherever you cloned it
+   cd /mnt/YOUR_POOL/hytale-server
    ```
 3. Create environment file:
    ```bash
-   cp .env.example .env
-   nano .env
+   sudo cp .env.example .env
+   sudo nano .env
    ```
 
 ### Step 4.2: Edit Configuration
