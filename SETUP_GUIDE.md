@@ -193,28 +193,30 @@ After deploying, you need to complete two things: **claim playit.gg agent** and 
 6. **Copy the public address** shown (e.g., `na.relay.playit.gg:12345`)
    - This is what you'll share with friends!
 
-### Step 6.3: Download Hytale Server Files
+### Step 6.3: Add Hytale Server Files
 
-The container will automatically attempt to download the server files.
+The container needs Hytale server files which require authentication to download.
 
-1. Watch the Hytale container logs:
+1. **On your computer**, download the Hytale Downloader CLI from https://hytale.com
+   (look in Downloads or Server Administration section)
+
+2. Run the downloader on your computer - it will authenticate and download:
+   - `HytaleServer.jar`
+   - `Assets.zip`
+
+3. **Transfer these files to TrueNAS** - copy them to your config dataset:
+   ```
+   /mnt/YOUR_POOL/hytale/config/
+   ```
+   (Use SMB share, SCP, or any file transfer method)
+
+4. **Restart the container:**
    ```bash
-   sudo docker compose logs -f hytale
+   cd /mnt/YOUR_POOL/hytale-server
+   sudo docker compose restart hytale
    ```
 
-2. If prompted, you'll see an **authentication code**:
-   ```
-   ==========================================
-     HYTALE DOWNLOAD - AUTHENTICATION
-   ==========================================
-   
-   Visit https://accounts.hytale.com/device and enter code: XXXX-XXXX
-   ```
-
-3. Open that URL, log in with your Hytale account, and enter the code
-4. The server files will download automatically
-
-> **Note:** If automatic download fails, the container will show manual instructions as a fallback.
+> **Note:** The container will wait patiently until files are added - no restart loop.
 
 ### Step 6.4: Complete Hytale Server Authentication
 

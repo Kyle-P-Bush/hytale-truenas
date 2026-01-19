@@ -4,123 +4,83 @@ set -e
 HYTALE_DIR="/opt/hytale/server"
 CONFIG_DIR="/opt/hytale/config"
 CONFIG_FILE="$CONFIG_DIR/config.json"
-DOWNLOADER_DIR="/opt/hytale/downloader"
 
 echo "=========================================="
 echo "  Hytale Server for TrueNAS"
 echo "=========================================="
 echo ""
 
-# Function to download the Hytale Downloader CLI
-download_hytale_cli() {
-    echo "[INFO] Checking for Hytale Downloader CLI..."
-    
-    if [ ! -f "$DOWNLOADER_DIR/hytale-downloader" ]; then
-        echo "[INFO] Downloading Hytale Downloader CLI..."
-        mkdir -p "$DOWNLOADER_DIR"
-        
-        # Download the official Hytale Downloader CLI
-        # The URL pattern may need updating based on official releases
-        DOWNLOAD_URL="https://cdn.hytale.com/downloader/hytale-downloader-linux-amd64.zip"
-        
-        if ! wget -q -O "$DOWNLOADER_DIR/downloader.zip" "$DOWNLOAD_URL" 2>/dev/null; then
-            echo "[WARN] Could not download from CDN, trying alternative..."
-            # Fallback: the downloader may be bundled or use a different URL
-            echo "[INFO] Please check https://hytale.com for the latest downloader URL"
-        fi
-        
-        if [ -f "$DOWNLOADER_DIR/downloader.zip" ]; then
-            unzip -q -o "$DOWNLOADER_DIR/downloader.zip" -d "$DOWNLOADER_DIR"
-            chmod +x "$DOWNLOADER_DIR/hytale-downloader"* 2>/dev/null || true
-            rm -f "$DOWNLOADER_DIR/downloader.zip"
-            echo "[INFO] Hytale Downloader CLI installed"
-        fi
-    fi
-}
-
-# Function to download Hytale server using CLI
-download_server() {
+# Function to check for server files
+check_server_files() {
     echo "[INFO] Checking for Hytale server files..."
     
     # Check for server JAR in multiple possible locations
     SERVER_JAR=""
-    for jar in "$HYTALE_DIR/HytaleServer.jar" "$HYTALE_DIR/hytale-server.jar" "$CONFIG_DIR/HytaleServer.jar" "$CONFIG_DIR/hytale-server.jar"; do
+    for jar in "$HYTALE_DIR/HytaleServer.jar" "$HYTALE_DIR/hytale-server.jar" \
+               "$CONFIG_DIR/HytaleServer.jar" "$CONFIG_DIR/hytale-server.jar" \
+               "$HYTALE_DIR/Server/HytaleServer.jar"; do
         if [ -f "$jar" ]; then
             SERVER_JAR="$jar"
+            echo "[INFO] Found server JAR: $SERVER_JAR"
             break
         fi
     done
     
     if [ -z "$SERVER_JAR" ]; then
-        echo "[INFO] Server not found. Starting download process..."
+        echo ""
+        echo "=========================================="
+        echo "  SERVER FILES REQUIRED"
+        echo "=========================================="
+        echo ""
+        echo "Hytale server files are not present."
+        echo ""
+        echo "To download the server files:"
+        echo ""
+        echo "1. On your computer, download the Hytale Downloader CLI from:"
+        echo "   https://hytale.com (look in Downloads or Server section)"
+        echo ""
+        echo "2. Run the downloader - it will authenticate with your Hytale account"
+        echo "   and download HytaleServer.jar and Assets.zip"
+        echo ""
+        echo "3. Transfer the files to your TrueNAS server:"
+        echo "   - HytaleServer.jar"
+        echo "   - Assets.zip"
+        echo ""
+        echo "4. Place them in your config dataset (mounted at $CONFIG_DIR)"
+        echo ""
+        echo "5. Restart this container:"
+        echo "   sudo docker compose restart hytale"
+        echo ""
+        echo "=========================================="
+        echo ""
+        echo "[INFO] Container will wait for files. Add them and restart."
         echo ""
         
-        # Try to use the Hytale Downloader CLI
-        DOWNLOADER=""
-        for dl in "$DOWNLOADER_DIR/hytale-downloader" "$DOWNLOADER_DIR/hytale-downloader-linux-amd64"; do
-            if [ -f "$dl" ] && [ -x "$dl" ]; then
-                DOWNLOADER="$dl"
-                break
-            fi
+        # Wait indefinitely but don't exit - this prevents restart loop
+        while true; do
+            sleep 3600  # Check every hour
+            # Re-check for files
+            for jar in "$HYTALE_DIR/HytaleServer.jar" "$HYTALE_DIR/hytale-server.jar" \
+                       "$CONFIG_DIR/HytaleServer.jar" "$CONFIG_DIR/hytale-server.jar"; do
+                if [ -f "$jar" ]; then
+                    echo "[INFO] Server files detected! Restarting setup..."
+                    exec "$0"  # Re-run the script
+                fi
+            done
         done
-        
-        if [ -n "$DOWNLOADER" ]; then
-            echo "=========================================="
-            echo "  HYTALE DOWNLOAD - AUTHENTICATION"
-            echo "=========================================="
-            echo ""
-            echo "The Hytale Downloader will now authenticate with your account."
-            echo "Watch for a code and URL to complete authentication."
-            echo ""
-            
-            cd "$HYTALE_DIR"
-            
-            # Run the downloader - it will prompt for OAuth
-            if $DOWNLOADER download --output "$HYTALE_DIR"; then
-                echo "[INFO] Hytale server files downloaded successfully!"
-                
-                # Find and set the server JAR
-                for jar in "$HYTALE_DIR/HytaleServer.jar" "$HYTALE_DIR/hytale-server.jar"; do
-                    if [ -f "$jar" ]; then
-                        SERVER_JAR="$jar"
-                        break
-                    fi
-                done
-            else
-                echo "[WARN] Downloader failed. Falling back to manual instructions."
-            fi
-        fi
-        
-        # If still no server JAR, show manual instructions
-        if [ -z "$SERVER_JAR" ]; then
-            echo ""
-            echo "=========================================="
-            echo "  MANUAL SETUP REQUIRED"
-            echo "=========================================="
-            echo ""
-            echo "Automatic download was not available or failed."
-            echo ""
-            echo "Option 1: Run the downloader manually"
-            echo "  1. SSH into your TrueNAS server"
-            echo "  2. Download the Hytale Downloader CLI from hytale.com"
-            echo "  3. Run it and authenticate with your Hytale account"
-            echo "  4. Copy HytaleServer.jar and Assets.zip to:"
-            echo "     $CONFIG_DIR/"
-            echo ""
-            echo "Option 2: Copy from your PC"
-            echo "  1. Find your Hytale installation folder"
-            echo "  2. Copy the server files to: $CONFIG_DIR/"
-            echo ""
-            echo "After adding files, restart this container."
-            echo "=========================================="
-            echo ""
-            
-            echo "[INFO] Waiting for server files to be added..."
-            sleep infinity
-        fi
     fi
     
-    echo "[INFO] Server JAR found: $SERVER_JAR"
+    # Copy JAR to server directory if it's in config
+    if [[ "$SERVER_JAR" == "$CONFIG_DIR"* ]] && [ "$SERVER_JAR" != "$HYTALE_DIR"* ]; then
+        echo "[INFO] Copying server files to runtime directory..."
+        cp "$SERVER_JAR" "$HYTALE_DIR/"
+        SERVER_JAR="$HYTALE_DIR/$(basename $SERVER_JAR)"
+        
+        # Also copy Assets.zip if present
+        if [ -f "$CONFIG_DIR/Assets.zip" ]; then
+            cp "$CONFIG_DIR/Assets.zip" "$HYTALE_DIR/"
+        fi
+    fi
 }
 
 # Function to create/update config
@@ -146,24 +106,21 @@ EOF
 }
 
 # Function to handle authentication info
-check_auth() {
-    AUTH_FILE="$CONFIG_DIR/.hytale_auth"
-    
-    if [ ! -f "$AUTH_FILE" ]; then
-        echo ""
-        echo "=========================================="
-        echo "  SERVER AUTHENTICATION"
-        echo "=========================================="
-        echo ""
-        echo "Hytale servers must be linked to a Hytale account."
-        echo ""
-        echo "When the server starts, you may see:"
-        echo "  'Visit https://accounts.hytale.com/device and enter code: XXXX-XXXX'"
-        echo ""
-        echo "Complete the authentication in your browser."
-        echo "=========================================="
-        echo ""
-    fi
+show_auth_info() {
+    echo ""
+    echo "=========================================="
+    echo "  SERVER AUTHENTICATION"
+    echo "=========================================="
+    echo ""
+    echo "Hytale servers must be linked to a Hytale account."
+    echo ""
+    echo "When the server starts, you may see a prompt like:"
+    echo "  'Visit https://accounts.hytale.com/device'"
+    echo "  'Enter code: XXXX-XXXX'"
+    echo ""
+    echo "Complete the authentication in your browser."
+    echo "=========================================="
+    echo ""
 }
 
 # Function to start the server
@@ -178,7 +135,7 @@ start_server() {
     
     # Find the server JAR
     SERVER_JAR=""
-    for jar in "HytaleServer.jar" "hytale-server.jar" "$CONFIG_DIR/HytaleServer.jar" "$CONFIG_DIR/hytale-server.jar"; do
+    for jar in "HytaleServer.jar" "hytale-server.jar"; do
         if [ -f "$jar" ]; then
             SERVER_JAR="$jar"
             break
@@ -186,7 +143,7 @@ start_server() {
     done
     
     if [ -z "$SERVER_JAR" ]; then
-        echo "[ERROR] No server JAR found!"
+        echo "[ERROR] No server JAR found in $HYTALE_DIR!"
         exit 1
     fi
     
@@ -195,6 +152,7 @@ start_server() {
     for assets in "$HYTALE_DIR/Assets.zip" "$CONFIG_DIR/Assets.zip"; do
         if [ -f "$assets" ]; then
             ASSETS_ARG="--assets $assets"
+            echo "[INFO] Using assets: $assets"
             break
         fi
     done
@@ -208,7 +166,9 @@ start_server() {
     # Server arguments
     SERVER_ARGS="--bind 0.0.0.0:5520"
     SERVER_ARGS="$SERVER_ARGS --world-dir /opt/hytale/worlds"
-    SERVER_ARGS="$SERVER_ARGS $ASSETS_ARG"
+    if [ -n "$ASSETS_ARG" ]; then
+        SERVER_ARGS="$SERVER_ARGS $ASSETS_ARG"
+    fi
     
     if [ "$ALLOW_OP" = "true" ]; then
         SERVER_ARGS="$SERVER_ARGS --allow-op"
@@ -221,8 +181,7 @@ start_server() {
 }
 
 # Main execution
-download_hytale_cli
-download_server
+check_server_files
 setup_config
-check_auth
+show_auth_info
 start_server
