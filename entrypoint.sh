@@ -23,12 +23,11 @@ download_hytale_cli() {
     
     mkdir -p "$DOWNLOADER_DIR"
     
-    # Try multiple possible download URLs
+    # Try multiple possible download URLs (official URL first)
     DOWNLOAD_URLS=(
+        "https://downloader.hytale.com/hytale-downloader.zip"
         "https://cdn.hytale.com/downloader/hytale-downloader.zip"
         "https://download.hytale.com/hytale-downloader.zip"
-        "https://hytale.com/download/hytale-downloader.zip"
-        "https://support.hytale.com/hc/downloads/hytale-downloader.zip"
     )
     
     echo "[INFO] Attempting to download Hytale Downloader CLI..."
