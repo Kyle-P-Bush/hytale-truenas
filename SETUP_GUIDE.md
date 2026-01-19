@@ -214,9 +214,15 @@ The container will attempt to automatically download the server files.
 
 ### Step 6.4: Complete Hytale Server Authentication
 
-1. View the Hytale container logs:
+The server will ask you to authenticate when it first starts. You need to access the server console to see the code or enter commands.
+
+1. **Attach to the server console:**
    ```bash
-   sudo docker compose logs -f hytale
+   # First find the container name (likely hytale-server-hytale-1)
+   sudo docker compose ps
+   
+   # Attach to it
+   sudo docker attach hytale-server-hytale-1
    ```
 
 2. Look for the authentication prompt:
@@ -228,10 +234,16 @@ The container will attempt to automatically download the server files.
    Visit https://hytale.com/link and enter code: XXXX-XXXX
    ```
 
-3. Open that URL in your browser
-4. Log in with your Hytale account
-5. Enter the code from the logs
-6. The server will continue starting
+3. Open that URL in your browser, log in, and enter the code.
+
+4. **CRITICAL: Detach Safely**
+   To leave the console **WITHOUT** stopping the server, you must press:
+   **Ctrl + P**, then **Ctrl + Q**
+   
+   (Do **NOT** press `Ctrl + C` or the server will stop!)
+
+5. Verify server has started:
+   You should see "Hytale Server Booted!" in the logs.
 
 ### Step 6.5: Verify Everything is Working
 
