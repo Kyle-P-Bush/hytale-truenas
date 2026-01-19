@@ -167,7 +167,7 @@ After deploying, you need to complete two things: **claim playit.gg agent** and 
 
 1. View the playit container logs:
    ```bash
-   docker compose logs -f playit
+   sudo docker compose logs -f playit
    ```
    Or in TrueNAS UI: **Apps** → Click on Hytale → **Logs** → select playit container
 
@@ -193,11 +193,36 @@ After deploying, you need to complete two things: **claim playit.gg agent** and 
 6. **Copy the public address** shown (e.g., `na.relay.playit.gg:12345`)
    - This is what you'll share with friends!
 
-### Step 6.3: Complete Hytale Server Authentication
+### Step 6.3: Add Hytale Server Files
+
+Hytale doesn't provide public server downloads. You need to copy files from your Hytale installation.
+
+1. On your gaming PC, find your Hytale installation:
+   - **Windows:** `C:\Users\YOU\AppData\Local\Hytale\`
+   - **Mac:** `~/Library/Application Support/Hytale/`
+
+2. Copy the server files from the `server/` folder:
+   - `hytale-server.jar` (the main file)
+   - Any `.dll` or config files
+
+3. Transfer these files to your TrueNAS `config` dataset:
+   ```bash
+   # From your TrueNAS shell, the config folder is:
+   /mnt/YOUR_POOL/hytale/config/
+   ```
+   You can use SMB share, SCP, or any file transfer method.
+
+4. After adding the files, restart the container:
+   ```bash
+   cd /mnt/YOUR_POOL/hytale-server
+   sudo docker compose restart hytale
+   ```
+
+### Step 6.4: Complete Hytale Server Authentication
 
 1. View the Hytale container logs:
    ```bash
-   docker compose logs -f hytale
+   sudo docker compose logs -f hytale
    ```
 
 2. Look for the authentication prompt:
@@ -214,9 +239,14 @@ After deploying, you need to complete two things: **claim playit.gg agent** and 
 5. Enter the code from the logs
 6. The server will continue starting
 
-### Step 6.4: Verify Everything is Working
+### Step 6.5: Verify Everything is Working
 
 Check the logs for:
+```bash
+sudo docker compose logs -f hytale
+```
+
+Look for:
 ```
 [INFO] Server started on port 5520
 [INFO] Waiting for players...
@@ -254,10 +284,10 @@ You can connect via:
 ### Server won't start
 ```bash
 # Check logs
-docker compose logs hytale
+sudo docker compose logs hytale
 
 # Common fixes:
-# - Ensure Java 25 image downloaded correctly
+# - Ensure hytale-server.jar is in /mnt/YOUR_POOL/hytale/config/
 # - Verify .env file has correct paths
 # - Check dataset permissions (apps:apps)
 ```
@@ -265,11 +295,11 @@ docker compose logs hytale
 ### playit.gg not connecting
 ```bash
 # Check playit logs
-docker compose logs playit
+sudo docker compose logs playit
 
 # Verify:
-# - Secret key is correct (no extra spaces)
-# - Tunnel is set to UDP, port 5520
+# - You claimed the agent via the link in logs
+# - Tunnel is set to Custom UDP, port 5520
 # - Agent shows "Online" in playit.gg dashboard
 ```
 
@@ -277,16 +307,16 @@ docker compose logs playit
 1. Verify your tunnel shows "Active" in playit.gg
 2. Ensure server authentication completed
 3. Check they're using UDP address, not TCP
-4. Try restarting playit container: `docker compose restart playit`
+4. Try restarting playit container: `sudo docker compose restart playit`
 
 ### Need to stop the server
 ```bash
-docker compose down
+sudo docker compose down
 ```
 
 ### View real-time logs
 ```bash
-docker compose logs -f
+sudo docker compose logs -f
 ```
 
 ---
@@ -294,7 +324,7 @@ docker compose logs -f
 ## Maintenance
 
 ### Backup Your World
-Your world is automatically saved to `/mnt/pool/hytale/worlds`.
+Your world is automatically saved to `/mnt/YOUR_POOL/hytale/worlds`.
 
 To create a snapshot:
 1. Go to **Datasets** → Select `hytale/worlds`
@@ -302,9 +332,9 @@ To create a snapshot:
 
 ### Update the Server
 ```bash
-cd /mnt/pool/hytale
-docker compose pull
-docker compose up -d
+cd /mnt/YOUR_POOL/hytale-server
+sudo docker compose pull
+sudo docker compose up -d
 ```
 
 ### Check Resource Usage
