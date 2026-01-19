@@ -4,11 +4,104 @@ set -e
 HYTALE_DIR="/opt/hytale/server"
 CONFIG_DIR="/opt/hytale/config"
 CONFIG_FILE="$CONFIG_DIR/config.json"
+DOWNLOADER_DIR="/opt/hytale/downloader"
 
 echo "=========================================="
 echo "  Hytale Server for TrueNAS"
 echo "=========================================="
 echo ""
+
+# Function to download the Hytale Downloader CLI
+download_hytale_cli() {
+    echo "[INFO] Checking for Hytale Downloader CLI..."
+    
+    # Check if already downloaded
+    if [ -f "$DOWNLOADER_DIR/hytale-downloader" ]; then
+        echo "[INFO] Hytale Downloader CLI already present"
+        return 0
+    fi
+    
+    mkdir -p "$DOWNLOADER_DIR"
+    
+    # Try multiple possible download URLs
+    DOWNLOAD_URLS=(
+        "https://cdn.hytale.com/downloader/hytale-downloader.zip"
+        "https://download.hytale.com/hytale-downloader.zip"
+        "https://hytale.com/download/hytale-downloader.zip"
+        "https://support.hytale.com/hc/downloads/hytale-downloader.zip"
+    )
+    
+    echo "[INFO] Attempting to download Hytale Downloader CLI..."
+    
+    for url in "${DOWNLOAD_URLS[@]}"; do
+        echo "[INFO] Trying: $url"
+        if wget -q --timeout=10 -O "$DOWNLOADER_DIR/hytale-downloader.zip" "$url" 2>/dev/null; then
+            # Verify it's a valid zip
+            if unzip -t "$DOWNLOADER_DIR/hytale-downloader.zip" >/dev/null 2>&1; then
+                echo "[INFO] Downloaded successfully from $url"
+                unzip -q -o "$DOWNLOADER_DIR/hytale-downloader.zip" -d "$DOWNLOADER_DIR"
+                
+                # Find and make executable
+                for binary in "$DOWNLOADER_DIR/hytale-downloader" "$DOWNLOADER_DIR/hytale-downloader-linux-amd64" "$DOWNLOADER_DIR/hytale-downloader-linux"; do
+                    if [ -f "$binary" ]; then
+                        chmod +x "$binary"
+                        # Rename to standard name if needed
+                        if [ "$binary" != "$DOWNLOADER_DIR/hytale-downloader" ]; then
+                            mv "$binary" "$DOWNLOADER_DIR/hytale-downloader"
+                        fi
+                        echo "[INFO] Hytale Downloader CLI installed successfully"
+                        return 0
+                    fi
+                done
+            fi
+        fi
+        rm -f "$DOWNLOADER_DIR/hytale-downloader.zip"
+    done
+    
+    echo "[WARN] Could not download Hytale Downloader CLI automatically"
+    return 1
+}
+
+# Function to download server files using CLI
+download_server_files() {
+    if [ -f "$DOWNLOADER_DIR/hytale-downloader" ]; then
+        echo ""
+        echo "=========================================="
+        echo "  DOWNLOADING HYTALE SERVER FILES"
+        echo "=========================================="
+        echo ""
+        echo "The downloader will authenticate with your Hytale account."
+        echo "Watch for a URL and code to complete authentication."
+        echo ""
+        
+        cd "$DOWNLOADER_DIR"
+        
+        # Run the downloader
+        if ./hytale-downloader -download-path "$DOWNLOADER_DIR/server-files.zip"; then
+            echo "[INFO] Download completed!"
+            
+            # Extract the server files
+            if [ -f "$DOWNLOADER_DIR/server-files.zip" ]; then
+                unzip -q -o "$DOWNLOADER_DIR/server-files.zip" -d "$HYTALE_DIR"
+                
+                # Move Server folder contents if present
+                if [ -d "$HYTALE_DIR/Server" ]; then
+                    mv "$HYTALE_DIR/Server/"* "$HYTALE_DIR/" 2>/dev/null || true
+                    rmdir "$HYTALE_DIR/Server" 2>/dev/null || true
+                fi
+                
+                # Copy Assets.zip if found
+                find "$HYTALE_DIR" -name "Assets.zip" -exec cp {} "$HYTALE_DIR/Assets.zip" \; 2>/dev/null || true
+                
+                echo "[INFO] Server files extracted successfully!"
+                return 0
+            fi
+        else
+            echo "[WARN] Downloader failed"
+        fi
+    fi
+    return 1
+}
 
 # Function to check for server files
 check_server_files() {
@@ -22,65 +115,66 @@ check_server_files() {
         if [ -f "$jar" ]; then
             SERVER_JAR="$jar"
             echo "[INFO] Found server JAR: $SERVER_JAR"
-            break
+            return 0
         fi
     done
     
-    if [ -z "$SERVER_JAR" ]; then
-        echo ""
-        echo "=========================================="
-        echo "  SERVER FILES REQUIRED"
-        echo "=========================================="
-        echo ""
-        echo "Hytale server files are not present."
-        echo ""
-        echo "To download the server files:"
-        echo ""
-        echo "1. On your computer, download the Hytale Downloader CLI from:"
-        echo "   https://hytale.com (look in Downloads or Server section)"
-        echo ""
-        echo "2. Run the downloader - it will authenticate with your Hytale account"
-        echo "   and download HytaleServer.jar and Assets.zip"
-        echo ""
-        echo "3. Transfer the files to your TrueNAS server:"
-        echo "   - HytaleServer.jar"
-        echo "   - Assets.zip"
-        echo ""
-        echo "4. Place them in your config dataset (mounted at $CONFIG_DIR)"
-        echo ""
-        echo "5. Restart this container:"
-        echo "   sudo docker compose restart hytale"
-        echo ""
-        echo "=========================================="
-        echo ""
-        echo "[INFO] Container will wait for files. Add them and restart."
-        echo ""
-        
-        # Wait indefinitely but don't exit - this prevents restart loop
-        while true; do
-            sleep 3600  # Check every hour
-            # Re-check for files
-            for jar in "$HYTALE_DIR/HytaleServer.jar" "$HYTALE_DIR/hytale-server.jar" \
-                       "$CONFIG_DIR/HytaleServer.jar" "$CONFIG_DIR/hytale-server.jar"; do
-                if [ -f "$jar" ]; then
-                    echo "[INFO] Server files detected! Restarting setup..."
-                    exec "$0"  # Re-run the script
-                fi
-            done
+    # Server not found - try to download
+    echo "[INFO] Server files not found. Attempting automatic download..."
+    
+    # First, try to get the downloader CLI
+    download_hytale_cli
+    
+    # Then try to download server files
+    if download_server_files; then
+        # Re-check for server JAR
+        for jar in "$HYTALE_DIR/HytaleServer.jar" "$HYTALE_DIR/hytale-server.jar"; do
+            if [ -f "$jar" ]; then
+                SERVER_JAR="$jar"
+                echo "[INFO] Found server JAR: $SERVER_JAR"
+                return 0
+            fi
         done
     fi
     
-    # Copy JAR to server directory if it's in config
-    if [[ "$SERVER_JAR" == "$CONFIG_DIR"* ]] && [ "$SERVER_JAR" != "$HYTALE_DIR"* ]; then
-        echo "[INFO] Copying server files to runtime directory..."
-        cp "$SERVER_JAR" "$HYTALE_DIR/"
-        SERVER_JAR="$HYTALE_DIR/$(basename $SERVER_JAR)"
-        
-        # Also copy Assets.zip if present
-        if [ -f "$CONFIG_DIR/Assets.zip" ]; then
-            cp "$CONFIG_DIR/Assets.zip" "$HYTALE_DIR/"
-        fi
-    fi
+    # Still no server files - show manual instructions
+    echo ""
+    echo "=========================================="
+    echo "  MANUAL SETUP REQUIRED"
+    echo "=========================================="
+    echo ""
+    echo "Automatic download was not available."
+    echo ""
+    echo "To get the server files:"
+    echo ""
+    echo "1. Download the Hytale Downloader CLI from:"
+    echo "   https://support.hytale.com/hc/en-us/articles/45326769420827"
+    echo "   (Look for 'hytale-downloader.zip' link)"
+    echo ""
+    echo "2. Run the downloader on your computer to get:"
+    echo "   - Server folder (contains HytaleServer.jar)"
+    echo "   - Assets.zip"
+    echo ""
+    echo "3. Copy these files to: $CONFIG_DIR/"
+    echo ""
+    echo "4. Restart this container:"
+    echo "   sudo docker compose restart hytale"
+    echo ""
+    echo "=========================================="
+    echo ""
+    echo "[INFO] Waiting for server files..."
+    
+    # Wait without exiting - check periodically for files
+    while true; do
+        sleep 60
+        for jar in "$HYTALE_DIR/HytaleServer.jar" "$HYTALE_DIR/hytale-server.jar" \
+                   "$CONFIG_DIR/HytaleServer.jar" "$CONFIG_DIR/hytale-server.jar"; do
+            if [ -f "$jar" ]; then
+                echo "[INFO] Server files detected! Continuing setup..."
+                return 0
+            fi
+        done
+    done
 }
 
 # Function to create/update config
@@ -105,37 +199,31 @@ EOF
     fi
 }
 
-# Function to handle authentication info
+# Function to show auth info
 show_auth_info() {
     echo ""
     echo "=========================================="
     echo "  SERVER AUTHENTICATION"
     echo "=========================================="
     echo ""
-    echo "Hytale servers must be linked to a Hytale account."
-    echo ""
-    echo "When the server starts, you may see a prompt like:"
-    echo "  'Visit https://accounts.hytale.com/device'"
-    echo "  'Enter code: XXXX-XXXX'"
-    echo ""
-    echo "Complete the authentication in your browser."
+    echo "When the server starts, you may see a prompt to authenticate."
+    echo "Visit the URL shown and enter the provided code."
     echo "=========================================="
     echo ""
 }
 
-# Function to start the server
+# Function to prepare and start the server
 start_server() {
     echo "[INFO] Starting Hytale server..."
     echo "[INFO] Java Memory: ${JAVA_MEMORY}"
     echo "[INFO] Max Players: ${MAX_PLAYERS}"
-    echo "[INFO] View Distance: ${VIEW_DISTANCE}"
     echo ""
     
     cd "$HYTALE_DIR"
     
     # Find the server JAR
     SERVER_JAR=""
-    for jar in "HytaleServer.jar" "hytale-server.jar"; do
+    for jar in "HytaleServer.jar" "hytale-server.jar" "$CONFIG_DIR/HytaleServer.jar" "$CONFIG_DIR/hytale-server.jar"; do
         if [ -f "$jar" ]; then
             SERVER_JAR="$jar"
             break
@@ -143,8 +231,15 @@ start_server() {
     done
     
     if [ -z "$SERVER_JAR" ]; then
-        echo "[ERROR] No server JAR found in $HYTALE_DIR!"
+        echo "[ERROR] Server JAR not found!"
         exit 1
+    fi
+    
+    # Copy from config if needed
+    if [[ "$SERVER_JAR" == "$CONFIG_DIR"* ]]; then
+        cp "$SERVER_JAR" "$HYTALE_DIR/"
+        SERVER_JAR="$(basename $SERVER_JAR)"
+        [ -f "$CONFIG_DIR/Assets.zip" ] && cp "$CONFIG_DIR/Assets.zip" "$HYTALE_DIR/"
     fi
     
     # Find assets
@@ -157,22 +252,13 @@ start_server() {
         fi
     done
     
-    # Build Java arguments
-    JAVA_ARGS="-Xmx${JAVA_MEMORY} -Xms${JAVA_MEMORY}"
-    JAVA_ARGS="$JAVA_ARGS -XX:+UseG1GC"
-    JAVA_ARGS="$JAVA_ARGS -XX:+ParallelRefProcEnabled"
-    JAVA_ARGS="$JAVA_ARGS -XX:MaxGCPauseMillis=200"
+    # Java arguments
+    JAVA_ARGS="-Xmx${JAVA_MEMORY} -Xms${JAVA_MEMORY} -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
     
     # Server arguments
-    SERVER_ARGS="--bind 0.0.0.0:5520"
-    SERVER_ARGS="$SERVER_ARGS --world-dir /opt/hytale/worlds"
-    if [ -n "$ASSETS_ARG" ]; then
-        SERVER_ARGS="$SERVER_ARGS $ASSETS_ARG"
-    fi
-    
-    if [ "$ALLOW_OP" = "true" ]; then
-        SERVER_ARGS="$SERVER_ARGS --allow-op"
-    fi
+    SERVER_ARGS="--bind 0.0.0.0:5520 --world-dir /opt/hytale/worlds"
+    [ -n "$ASSETS_ARG" ] && SERVER_ARGS="$SERVER_ARGS $ASSETS_ARG"
+    [ "$ALLOW_OP" = "true" ] && SERVER_ARGS="$SERVER_ARGS --allow-op"
     
     echo "[INFO] Executing: java $JAVA_ARGS -jar $SERVER_JAR $SERVER_ARGS"
     echo ""
