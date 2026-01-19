@@ -257,10 +257,14 @@ start_server() {
     # Java arguments
     JAVA_ARGS="-Xmx${JAVA_MEMORY} -Xms${JAVA_MEMORY} -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
     
-    # Server arguments
-    SERVER_ARGS="--bind 0.0.0.0:5520 --world-dir /opt/hytale/worlds"
+    # Server arguments (only use valid Hytale options)
+    # Note: World saves to current directory by default
+    SERVER_ARGS="--bind 0.0.0.0:5520"
     [ -n "$ASSETS_ARG" ] && SERVER_ARGS="$SERVER_ARGS $ASSETS_ARG"
     [ "$ALLOW_OP" = "true" ] && SERVER_ARGS="$SERVER_ARGS --allow-op"
+    
+    # Enable backups
+    SERVER_ARGS="$SERVER_ARGS --backup --backup-dir /opt/hytale/backups --backup-frequency 60"
     
     echo "[INFO] Executing: java $JAVA_ARGS -jar $SERVER_JAR $SERVER_ARGS"
     echo ""
