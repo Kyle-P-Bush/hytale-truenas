@@ -1,0 +1,164 @@
+groups:
+  - name: Server Configuration
+    description: Hytale server settings
+
+  - name: Network Configuration  
+    description: CGNAT bypass and networking settings
+
+  - name: Storage Configuration
+    description: Persistent data storage
+
+  - name: Resources
+    description: CPU and memory allocation
+
+questions:
+  # ===========================================
+  # Server Configuration
+  # ===========================================
+  - variable: serverName
+    label: Server Name
+    description: Display name for your Hytale server
+    group: Server Configuration
+    schema:
+      type: string
+      default: "TrueNAS Hytale Server"
+      required: true
+
+  - variable: maxPlayers
+    label: Maximum Players
+    description: Maximum number of concurrent players
+    group: Server Configuration
+    schema:
+      type: int
+      default: 10
+      min: 1
+      max: 100
+      required: true
+
+  - variable: viewDistance
+    label: View Distance
+    description: View distance in blocks (higher = more RAM needed)
+    group: Server Configuration
+    schema:
+      type: int
+      default: 192
+      enum:
+        - value: 192
+          description: "192 blocks (Low - 4GB RAM)"
+        - value: 384
+          description: "384 blocks (Medium - 8GB RAM)"
+        - value: 480
+          description: "480 blocks (High - 12GB+ RAM)"
+
+  - variable: difficulty
+    label: Difficulty
+    description: Game difficulty level
+    group: Server Configuration
+    schema:
+      type: string
+      default: "normal"
+      enum:
+        - value: peaceful
+          description: Peaceful
+        - value: easy
+          description: Easy
+        - value: normal
+          description: Normal
+        - value: hard
+          description: Hard
+
+  - variable: javaMemory
+    label: Java Memory
+    description: RAM allocated to the Hytale server
+    group: Server Configuration
+    schema:
+      type: string
+      default: "4G"
+      enum:
+        - value: "4G"
+          description: "4 GB (1-10 players)"
+        - value: "6G"
+          description: "6 GB (10-20 players)"
+        - value: "8G"
+          description: "8 GB (20-30 players)"
+        - value: "12G"
+          description: "12 GB (30+ players)"
+
+  # ===========================================
+  # Network Configuration (CGNAT Bypass)
+  # ===========================================
+  - variable: enablePlayit
+    label: Enable playit.gg (CGNAT Bypass)
+    description: |
+      Enable if you're behind CGNAT (AT&T, etc.) or can't port forward.
+      Players can connect without installing any software!
+    group: Network Configuration
+    schema:
+      type: boolean
+      default: true
+
+  - variable: playitSecretKey
+    label: playit.gg Secret Key
+    description: |
+      Get this from playit.gg after creating an account and UDP tunnel.
+      Required if playit.gg is enabled.
+    group: Network Configuration
+    schema:
+      type: string
+      default: ""
+      private: true
+      show_if: [["enablePlayit", "=", true]]
+
+  - variable: exposeLocalPort
+    label: Expose Local Network Port
+    description: Also expose port 5520 on local network for LAN play
+    group: Network Configuration
+    schema:
+      type: boolean
+      default: true
+
+  # ===========================================
+  # Storage Configuration
+  # ===========================================
+  - variable: worldsStorage
+    label: Worlds Storage
+    description: Path to store world save data
+    group: Storage Configuration
+    schema:
+      type: hostpath
+      required: true
+
+  - variable: configStorage
+    label: Config Storage
+    description: Path to store server configuration
+    group: Storage Configuration
+    schema:
+      type: hostpath
+      required: true
+
+  - variable: backupsStorage
+    label: Backups Storage
+    description: Path to store automatic backups
+    group: Storage Configuration
+    schema:
+      type: hostpath
+      required: true
+
+  # ===========================================
+  # Resources
+  # ===========================================
+  - variable: memoryLimit
+    label: Memory Limit
+    description: Maximum memory the container can use
+    group: Resources
+    schema:
+      type: string
+      default: "6Gi"
+
+  - variable: memoryRequest
+    label: Memory Request
+    description: Guaranteed memory for the container
+    group: Resources
+    schema:
+      type: string
+      default: "4Gi"

@@ -1,0 +1,14 @@
+# Ignore environment files with secrets
+.env
+
+# Local data directories
+data/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp

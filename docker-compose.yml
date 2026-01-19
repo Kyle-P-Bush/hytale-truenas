@@ -1,0 +1,102 @@
+# Hytale Server for TrueNAS SCALE
+# With playit.gg CGNAT bypass
+
+services:
+  # ===========================================
+  # Hytale Dedicated Server
+  # ===========================================
+  hytale:
+    build: .
+    container_name: hytale-server
+    restart: unless-stopped
+
+    # Environment configuration
+    environment:
+      - SERVER_NAME=${SERVER_NAME:-TrueNAS Hytale Server}
+      - MAX_PLAYERS=${MAX_PLAYERS:-10}
+      - VIEW_DISTANCE=${VIEW_DISTANCE:-192}
+      - DIFFICULTY=${DIFFICULTY:-normal}
+      - JAVA_MEMORY=${JAVA_MEMORY:-4G}
+      - ALLOW_OP=${ALLOW_OP:-false}
+
+    # Port for local network access (optional, playit handles public access)
+    ports:
+      - "5520:5520/udp"
+
+    # Persistent storage - map to TrueNAS datasets
+    volumes:
+      - ${HYTALE_WORLDS:-./data/worlds}:/opt/hytale/worlds
+      - ${HYTALE_CONFIG:-./data/config}:/opt/hytale/config
+      - ${HYTALE_BACKUPS:-./data/backups}:/opt/hytale/backups
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: ${MEMORY_LIMIT:-6G}
+        reservations:
+          memory: ${MEMORY_RESERVATION:-4G}
+
+    # Health monitoring
+    healthcheck:
+      test: [ "CMD", "bash", "-c", "echo > /dev/udp/localhost/5520" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ===========================================
+  # playit.gg Tunnel (CGNAT Bypass)
+  # ===========================================
+  # This creates a public address for players to connect
+  # without requiring them to install any software
+  playit:
+    image: pepaondrugs/playitgg-docker:latest
+    container_name: hytale-playit
+    restart: unless-stopped
+
+    environment:
+      # Get your secret key from https://playit.gg
+      # 1. Create account at playit.gg
+      # 2. Add a tunnel for UDP port 5520
+      # 3. Copy the secret key
+      - SECRET_KEY=${PLAYIT_SECRET_KEY}
+
+    volumes:
+      - playit-data:/app/config
+
+    # playit needs to reach the hytale container
+    depends_on:
+      - hytale
+
+    # Share network with hytale for localhost access
+    network_mode: "service:hytale"
+
+# Named volume for playit config persistence
+volumes:
+  playit-data:
+
+    # ===========================================
+    # USAGE INSTRUCTIONS
+    # ===========================================
+    #
+    # 1. Create a .env file with your settings:
+    #
+    #    SERVER_NAME=My Awesome Server
+    #    MAX_PLAYERS=10
+    #    JAVA_MEMORY=4G
+    #    PLAYIT_SECRET_KEY=your-secret-key-here
+    #    HYTALE_WORLDS=/mnt/pool/hytale/worlds
+    #    HYTALE_CONFIG=/mnt/pool/hytale/config
+    #    HYTALE_BACKUPS=/mnt/pool/hytale/backups
+    #
+    # 2. Start the stack:
+    #    docker compose up -d
+    #
+    # 3. Get your public address from playit.gg dashboard
+    #    (e.g., na.relay.playit.gg:12345)
+    #
+    # 4. Share that address with friends - they just paste it
+    #    into Hytale, no software installation needed!
+    #
+    # ===========================================

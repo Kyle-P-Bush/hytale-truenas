@@ -1,0 +1,20 @@
+app_version: "1.0.0"
+name: hytale
+title: Hytale Server
+description: |
+  Hytale dedicated game server with built-in CGNAT bypass.
+  Players connect with just an IP:port - no software installation required!
+home: https://hytale.com
+sources:
+  - https://github.com/truenas/apps
+maintainers:
+  - name: TrueNAS Community
+    email: community@truenas.com
+categories:
+  - gaming
+keywords:
+  - hytale
+  - game-server
+  - gaming
+  - multiplayer
+icon_url: https://hytale.com/favicon.ico
