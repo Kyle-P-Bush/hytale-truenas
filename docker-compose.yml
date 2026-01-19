@@ -9,6 +9,8 @@ services:
     build: .
     container_name: hytale-server
     restart: unless-stopped
+    stdin_open: true # docker run -i
+    tty: true # docker run -t
 
     # Environment configuration
     environment:
