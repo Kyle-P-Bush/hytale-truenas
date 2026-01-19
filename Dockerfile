@@ -1,23 +1,19 @@
 # Hytale Server Docker Image for TrueNAS
-# Based on Adoptium Temurin Java 25
+# Based on Adoptium Temurin Java 25 (Debian-based for glibc compatibility)
 
-FROM eclipse-temurin:25-jre-alpine
+FROM eclipse-temurin:25-jre-noble
 
 LABEL maintainer="TrueNAS Community"
 LABEL description="Hytale Dedicated Server for TrueNAS SCALE"
 LABEL version="1.0.0"
 
 # Install required packages
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     wget \
-    bash \
     jq \
-    unzip
-
-# Create hytale user and directories
-RUN addgroup -g 1000 hytale && \
-    adduser -u 1000 -G hytale -h /opt/hytale -D hytale
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /opt/hytale
@@ -26,8 +22,8 @@ WORKDIR /opt/hytale
 RUN mkdir -p /opt/hytale/server \
     /opt/hytale/worlds \
     /opt/hytale/config \
-    /opt/hytale/backups && \
-    chown -R hytale:hytale /opt/hytale
+    /opt/hytale/backups \
+    /opt/hytale/downloader
 
 # Copy entrypoint script
 COPY --chmod=755 entrypoint.sh /opt/hytale/entrypoint.sh
@@ -50,9 +46,8 @@ VOLUME ["/opt/hytale/worlds", "/opt/hytale/config", "/opt/hytale/backups"]
 # Run as root for TrueNAS volume mount compatibility
 # (TrueNAS volumes are typically owned by apps:apps UID 568)
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -sf http://localhost:5520/health || exit 1
+# Health check - disabled for now as Hytale uses UDP
+# HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+#     CMD curl -sf http://localhost:5520/health || exit 1
 
 ENTRYPOINT ["/opt/hytale/entrypoint.sh"]
-
