@@ -139,39 +139,23 @@ Save and exit (Ctrl+X, Y, Enter in nano).
 
 ---
 
-## Part 5: Deploy the Application (5 minutes)
+## Part 5: Deploy the Application (2 minutes)
 
-### Option A: Via TrueNAS Apps UI (Recommended)
-
-1. Go to **Apps** → **Discover Apps**
-2. Click the **⋮** menu (three dots) → **Install via YAML**
-3. Enter application name: `hytale`
-4. Copy the contents of `docker-compose.yml` into the YAML editor
-5. In the YAML, replace environment variable references with actual values:
-   ```yaml
-   environment:
-     - SERVER_NAME=My Hytale Server
-     - MAX_PLAYERS=10
-   # No secret key needed - we'll claim via link
-   ```
-6. Update volume paths to match your datasets
-7. Click **Save**
-
-### Option B: Via Command Line
-
-1. SSH into TrueNAS
-2. Navigate to project:
+1. SSH into TrueNAS or use the web Shell
+2. Navigate to the project directory:
    ```bash
-   cd /mnt/pool/hytale
+   cd /mnt/YOUR_POOL/hytale-server
    ```
 3. Start the stack:
    ```bash
-   docker compose up -d
+   sudo docker compose up -d
    ```
 4. Check it's running:
    ```bash
-   docker compose ps
+   sudo docker compose ps
    ```
+
+You should see two containers: `hytale-server` and `hytale-playit`.
 
 ---
 
