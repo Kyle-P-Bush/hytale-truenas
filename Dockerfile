@@ -24,9 +24,9 @@ WORKDIR /opt/hytale
 
 # Create necessary directories
 RUN mkdir -p /opt/hytale/server \
-             /opt/hytale/worlds \
-             /opt/hytale/config \
-             /opt/hytale/backups && \
+    /opt/hytale/worlds \
+    /opt/hytale/config \
+    /opt/hytale/backups && \
     chown -R hytale:hytale /opt/hytale
 
 # Copy entrypoint script
@@ -47,11 +47,12 @@ EXPOSE 5520/udp
 # Volume mounts for persistent data
 VOLUME ["/opt/hytale/worlds", "/opt/hytale/config", "/opt/hytale/backups"]
 
-# Switch to hytale user
-USER hytale
+# Run as root for TrueNAS volume mount compatibility
+# (TrueNAS volumes are typically owned by apps:apps UID 568)
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -sf http://localhost:5520/health || exit 1
 
 ENTRYPOINT ["/opt/hytale/entrypoint.sh"]
+
