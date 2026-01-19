@@ -304,23 +304,40 @@ sudo docker compose logs hytale
 # - Check dataset permissions (apps:apps)
 ```
 
-### playit.gg not connecting
-```bash
-# Check playit logs
-sudo docker compose logs playit
-
-# Verify:
-# - You claimed the agent via the link in logs
-# - Tunnel is set to Custom UDP, port 5520
-# - Agent shows "Online" in playit.gg dashboard
-```
-
 ### Friends can't connect
 1. **Check Server Logs:** If their connection attempt **doesn't** appear in `sudo docker compose logs hytale`, the issue is the connection (playit.gg), not the server.
 2. Verify your tunnel shows "Active" in playit.gg dashboard.
 3. Ensure server authentication completed.
 4. Check they're using UDP address (not TCP).
 5. **Restart playit:** `sudo docker compose restart playit`
+
+---
+
+## Part 8: Security & Whitelisting (Optional)
+
+By default, any player with the address can join. To make it private (whitelist):
+
+1. **Attach to the console:**
+   ```bash
+   sudo docker attach hytale-server-hytale-1
+   ```
+
+2. **Remove default access:** (Stops random players)
+   ```
+   /grouppermission default remove hytale.server.access
+   ```
+
+3. **Add your friends:**
+   ```
+   /permission add <friend_username> hytale.server.access
+   ```
+
+4. **Add yourself as Admin (OP):**
+   ```
+   /op <your_username>
+   ```
+
+5. **Detach safely:** `Ctrl+P`, `Ctrl+Q`
 
 ### Need to stop the server
 ```bash
