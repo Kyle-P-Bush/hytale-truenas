@@ -316,10 +316,11 @@ sudo docker compose logs playit
 ```
 
 ### Friends can't connect
-1. Verify your tunnel shows "Active" in playit.gg
-2. Ensure server authentication completed
-3. Check they're using UDP address, not TCP
-4. Try restarting playit container: `sudo docker compose restart playit`
+1. **Check Server Logs:** If their connection attempt **doesn't** appear in `sudo docker compose logs hytale`, the issue is the connection (playit.gg), not the server.
+2. Verify your tunnel shows "Active" in playit.gg dashboard.
+3. Ensure server authentication completed.
+4. Check they're using UDP address (not TCP).
+5. **Restart playit:** `sudo docker compose restart playit`
 
 ### Need to stop the server
 ```bash
