@@ -74,6 +74,13 @@ services:
     # Share network with hytale for localhost access
     network_mode: "service:hytale"
 
+    # Validation Fix: Disable IPv6 and force DNS to prevent timeouts
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+
 # Named volume for playit config persistence
 volumes:
   playit-data:
