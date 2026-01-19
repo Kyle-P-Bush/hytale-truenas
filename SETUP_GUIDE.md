@@ -38,18 +38,27 @@ We'll do all of this in **Part 6** after the containers are running.
 
 ## Part 2: Prepare TrueNAS Storage (5 minutes)
 
+### Step 2.0: Find Your Pool Name
+First, find your pool's mount path. In TrueNAS Shell or SSH:
+```bash
+ls /mnt/
+```
+You'll see your pool name (common names: `tank`, `pool`, `storage`, `data`).
+
+> **Example:** If you see `storage`, your base path is `/mnt/storage/`
+
 ### Step 2.1: Create Datasets
 1. Log into your **TrueNAS web interface**
 2. Go to **Datasets** in the sidebar
-3. Select your pool (e.g., `tank` or `pool`)
-4. Click **Add Dataset** and create these three:
+3. Select your pool
+4. Click **Add Dataset** and create these:
 
-| Dataset Name | Full Path Example |
-|-------------|-------------------|
-| `hytale` | `/mnt/pool/hytale` |
-| `hytale/worlds` | `/mnt/pool/hytale/worlds` |
-| `hytale/config` | `/mnt/pool/hytale/config` |
-| `hytale/backups` | `/mnt/pool/hytale/backups` |
+| Dataset Name | Example Path (if pool is "storage") |
+|-------------|-------------------------------------|
+| `hytale` | `/mnt/storage/hytale` |
+| `hytale/worlds` | `/mnt/storage/hytale/worlds` |
+| `hytale/config` | `/mnt/storage/hytale/config` |
+| `hytale/backups` | `/mnt/storage/hytale/backups` |
 
 ### Step 2.2: Set Permissions
 1. Select the `hytale` dataset
@@ -64,15 +73,23 @@ We'll do all of this in **Part 6** after the containers are running.
 
 ## Part 3: Get the Project Files (1 minute)
 
-SSH into TrueNAS or use **System → Shell** in the web UI, then run:
+SSH into TrueNAS or use **System → Shell** in the web UI.
 
+**Option A: Clone into your hytale dataset** (if you already created it)
 ```bash
-cd /mnt/pool
-git clone https://github.com/Kyle-P-Bush/hytale-truenas.git hytale
-cd hytale
+# Replace YOUR_POOL with your actual pool name (e.g., storage, tank, pool)
+cd /mnt/YOUR_POOL/hytale
+git clone https://github.com/Kyle-P-Bush/hytale-truenas.git .
 ```
 
-That's it! All files are now in `/mnt/pool/hytale/`.
+**Option B: Clone to a separate location**
+```bash
+cd /mnt/YOUR_POOL
+git clone https://github.com/Kyle-P-Bush/hytale-truenas.git hytale-server
+cd hytale-server
+```
+
+> **Note:** The project files (Dockerfile, etc.) and data storage (worlds, config) can be in different locations. Just update the paths in `.env` accordingly.
 
 ---
 
@@ -80,9 +97,9 @@ That's it! All files are now in `/mnt/pool/hytale/`.
 
 ### Step 4.1: Create Environment File
 1. SSH into TrueNAS or use the web Shell
-2. Navigate to project:
+2. Navigate to where you cloned the project:
    ```bash
-   cd /mnt/pool/hytale
+   cd /mnt/YOUR_POOL/hytale   # or wherever you cloned it
    ```
 3. Create environment file:
    ```bash
@@ -101,15 +118,17 @@ SERVER_NAME=My Hytale Server
 MAX_PLAYERS=10
 JAVA_MEMORY=4G
 
-# Storage paths (match your datasets!)
-HYTALE_WORLDS=/mnt/pool/hytale/worlds
-HYTALE_CONFIG=/mnt/pool/hytale/config
-HYTALE_BACKUPS=/mnt/pool/hytale/backups
+# Storage paths - UPDATE THESE TO MATCH YOUR POOL!
+# Example for pool named "storage":
+HYTALE_WORLDS=/mnt/storage/hytale/worlds
+HYTALE_CONFIG=/mnt/storage/hytale/config
+HYTALE_BACKUPS=/mnt/storage/hytale/backups
 
 # NOTE: Leave PLAYIT_SECRET_KEY empty for now
 # We'll claim the agent after starting the containers
 PLAYIT_SECRET_KEY=
 ```
+
 
 Save and exit (Ctrl+X, Y, Enter in nano).
 
