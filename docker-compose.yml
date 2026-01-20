@@ -18,7 +18,7 @@ services:
       - MAX_PLAYERS=${MAX_PLAYERS:-10}
       - VIEW_DISTANCE=${VIEW_DISTANCE:-192}
       - DIFFICULTY=${DIFFICULTY:-normal}
-      - JAVA_MEMORY=${JAVA_MEMORY:-4G}
+      - JAVA_MEMORY=${JAVA_MEMORY:-8G}
       - ALLOW_OP=${ALLOW_OP:-false}
 
     # Host networking for stability with QUIC/UDP
@@ -34,9 +34,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: ${MEMORY_LIMIT:-6G}
+          memory: ${MEMORY_LIMIT:-12G}
         reservations:
-          memory: ${MEMORY_RESERVATION:-4G}
+          memory: ${MEMORY_RESERVATION:-8G}
 
     # Health monitoring
     healthcheck:
