@@ -52,15 +52,13 @@ services:
   # This creates a public address for players to connect
   # without requiring them to install any software
   playit:
-    image: ghcr.io/playit-cloud/playit-agent:latest
+    image: pepaondrugs/playitgg-docker:latest
     container_name: hytale-playit
     restart: unless-stopped
 
     environment:
-      # Get your secret key from https://playit.gg
-      # 1. Create account at playit.gg
-      # 2. Add a tunnel for UDP port 5520
-      - SECRET_KEY=${PLAYIT_SECRET_KEY}
+      # Leave empty for claim-based setup
+      - PLAYIT_SECRET_KEY=${PLAYIT_SECRET_KEY:-}
 
     volumes:
       - ./data/playit_v2:/root/.config/playit_gg
