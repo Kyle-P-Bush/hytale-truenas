@@ -60,7 +60,7 @@ services:
       # Get your secret key from https://playit.gg
       # 1. Create account at playit.gg
       # 2. Add a tunnel for UDP port 5520
-      - PLAYIT_SECRET_KEY=${PLAYIT_SECRET_KEY}
+      - SECRET_KEY=${PLAYIT_SECRET_KEY}
 
     volumes:
       - ./data/playit_v2:/root/.config/playit_gg
