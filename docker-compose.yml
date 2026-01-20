@@ -63,7 +63,7 @@ services:
       - PLAYIT_SECRET_KEY=${PLAYIT_SECRET_KEY}
 
     volumes:
-      - /opt/hytale/playit_v2:/root/.config/playit_gg
+      - ./data/playit_v2:/root/.config/playit_gg
 
     # Share network with host (same as hytale)
     network_mode: "host"
