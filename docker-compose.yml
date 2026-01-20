@@ -60,15 +60,10 @@ services:
       # Get your secret key from https://playit.gg
       # 1. Create account at playit.gg
       # 2. Add a tunnel for UDP port 5520
-      # 3. Copy the secret key
-      - SECRET_KEY=${PLAYIT_SECRET_KEY}
+      - PLAYIT_SECRET_KEY=${PLAYIT_SECRET_KEY}
 
     volumes:
-      - playit-data:/root/.config/playit_gg
-
-    # playit needs to reach the hytale container
-    depends_on:
-      - hytale
+      - /opt/hytale/playit_v2:/root/.config/playit_gg
 
     # Share network with host (same as hytale)
     network_mode: "host"
