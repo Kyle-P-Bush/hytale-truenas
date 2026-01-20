@@ -21,9 +21,8 @@ services:
       - JAVA_MEMORY=${JAVA_MEMORY:-4G}
       - ALLOW_OP=${ALLOW_OP:-false}
 
-    # Port for local network access (optional, playit handles public access)
-    ports:
-      - "5520:5520/udp"
+    # Host networking for stability with QUIC/UDP
+    network_mode: "host"
 
     # Persistent storage - map to TrueNAS datasets
     volumes:
@@ -46,13 +45,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
-
-    # Validation Fix: Disable IPv6 and force DNS (Inherited by playit sidecar)
-    sysctls:
-      - net.ipv6.conf.all.disable_ipv6=1
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
 
   # ===========================================
   # playit.gg Tunnel (CGNAT Bypass)
@@ -78,8 +70,8 @@ services:
     depends_on:
       - hytale
 
-    # Share network with hytale for localhost access
-    network_mode: "service:hytale"
+    # Share network with host (same as hytale)
+    network_mode: "host"
 
 # Named volume for playit config persistence
 volumes:
