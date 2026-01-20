@@ -186,12 +186,16 @@ After deploying, you need to complete two things: **claim playit.gg agent** and 
 2. Click on **Tunnels** in the sidebar
 3. Click **Create Tunnel**
 4. Configure:
-   - **Tunnel Type:** Custom UDP
+   - **Tunnel Type:** Select **Hytale** (recommended for best stability)
+     - If "Hytale" is not available, use "Custom UDP"
    - **Local Port:** `5520`
    - **Agent:** Select your claimed agent
 5. Click **Create**
 6. **Copy the public address** shown (e.g., `na.relay.playit.gg:12345`)
    - This is what you'll share with friends!
+
+> **Note:** The Hytale tunnel type is optimized for Hytale's QUIC/UDP protocol
+> and provides more stable connections than generic UDP tunnels.
 
 ### Step 6.3: Download Hytale Server Files
 
