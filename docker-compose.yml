@@ -52,7 +52,7 @@ services:
   # This creates a public address for players to connect
   # without requiring them to install any software
   playit:
-    image: pepaondrugs/playitgg-docker:latest
+    image: ghcr.io/playit-cloud/playit-agent:latest
     container_name: hytale-playit
     restart: unless-stopped
 
