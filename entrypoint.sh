@@ -199,6 +199,14 @@ EOF
     else
         echo "[INFO] Using existing config at $CONFIG_FILE"
     fi
+    
+    # Validation Fix: Persist authentication file
+    # Hytale saves 'auth.enc' in the server root, which is not persisted.
+    # We symlink it to the config directory so it survives restarts.
+    if [ ! -L "$HYTALE_DIR/auth.enc" ]; then
+        echo "[INFO] Linking auth.enc to config directory for persistence..."
+        ln -sf "$CONFIG_DIR/auth.enc" "$HYTALE_DIR/auth.enc"
+    fi
 }
 
 # Function to show auth info
